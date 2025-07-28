@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sunaryum Wallet Dashboard</title>
+  <link rel="stylesheet" href="styles/dashboard.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="sunaryum-dashboard">
+    <!-- Header -->
+    <header class="wallet-header">
+      <div class="wallet-info">
+        <div class="wallet-logo">
+          <img style="width: auto; height: 40px;" src="styles/simbolo.png">
+          <span>Sunaryum Wallet</span>
+        </div>
+        <button class="btn-logout" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+      <div class="wallet-address">
+        <span id="walletAddress"></span>
+        <button class="btn-copy" id="copyAddressBtn">
+          <i class="far fa-copy"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="balance-header">
+        <span>Your Balance</span>
+      </div>
+      <div class="balance-amount">
+        <span class="amount" id="balanceAmount"></span>
+        <span class="currency">SUN</span>
+      </div>
+      <div class="balance-fiat" id="balanceFiat">
+   
+      </div>
+      <div class="balance-actions">
+        <button class="btn-transfer" id="transferBtn">
+          <i class="fas fa-paper-plane"></i> Send
+        </button>
+      </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="transaction-section">
+      <div class="section-header">
+        <h3><i class="fas fa-history"></i> Transaction History</h3>
+        <button class="btn-view-all" id="viewAllBtn">View All</button>
+      </div>
+      
+      <div class="transaction-list" id="transactionList">
+        
+      </div>
+    </div>
+
+  
+    <div id="transferModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Send SUN</h2>
+        <div class="form-group">
+          <label for="recipientAddress">Recipient Address</label>
+          <input type="text" id="recipientAddress" placeholder="Enter wallet address          ">
+        </div>
+        <div class="form-group">
+          <label for="transferAmount">SUN Amount</label>
+          <input type="number" step="0.0001" id="transferAmount" placeholder="0.0000">
+        </div>
+        <button id="submitTransfer" class="btn-submit">Send Transfer        </button>
+        <div id="transferStatus" class="status-message"></div>
+      </div>
+    </div>
+    <!-- Navigation -->
+    <nav class="wallet-nav">
+      <button class="nav-item active" data-page="dashboard">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" data-page="transactions">
+        <i class="fas fa-exchange-alt"></i>
+        <span>Transactions</span>
+      </button>
+      <button class="nav-item" data-page="settings">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="scripts/supabase-js-v2.min.js"></script>
+  <script src="scripts/init-supabase.js"></script>
+  <script type="module" src="scripts/dashboard.js"></script>
+  
+  
+  </script>
+</body>
+</html>
