@@ -268,38 +268,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Renderiza até 3 últimas transações
-  function renderLastTransactions(transactions) {
-    if (!transactionList) return;
-    transactionList.innerHTML = '';
-    transactions.forEach(tx => {
-      const isReceived = tx.type === 'received';
-      const dateFmt = tx.created_at ? formatDateTime(tx.created_at) : '—';
-      const amountNum = parseFloat(tx.amount) || 0;
-      const amountFmt = (isReceived ? '+' : '-') + amountNum.toFixed(4);
-      const iconDir = isReceived ? 'down' : 'up';
-      const label = isReceived ? 'Received' : 'Sent';
-      const statusText = tx.status === 'pending' ? 'Pending' : 'Confirmed';
-      const statusClass = tx.status === 'pending' ? 'pending' : 'confirmed';
+  // Função para renderizar as últimas transações (CORRIGIDA)
+function renderLastTransactions(transactions) {
+  if (!transactionList) return;
+  transactionList.innerHTML = '';
+  
+  transactions.forEach(tx => {
+    // Normaliza o tipo para minúsculas e verifica se é envio
+    const isSent = tx.type.toLowerCase() === 'sent';
+    
+    // Formatações
+    const dateFmt = tx.created_at ? formatDateTime(tx.created_at) : '—';
+    const amountNum = parseFloat(tx.amount) || 0;
+    const amountFmt = (isSent ? '-' : '+') + amountNum.toFixed(4); // CORREÇÃO DO SINAL
+    const iconDir = isSent ? 'up' : 'down';
+    const label = isSent ? 'Sent' : 'Received'; // CORREÇÃO DO LABEL
+    const statusText = tx.status === 'pending' ? 'Pending' : 'Confirmed';
+    const statusClass = tx.status === 'pending' ? 'pending' : 'confirmed';
 
-      const itemHTML = `
-        <div class="transaction-item ${tx.type}">
-          <div class="transaction-icon">
-            <i class="fas fa-arrow-${iconDir}"></i>
+    const itemHTML = `
+      <div class="transaction-item ${tx.type}">
+        <div class="transaction-icon">
+          <i class="fas fa-arrow-${iconDir}"></i>
+        </div>
+        <div class="transaction-details">
+          <div class="transaction-meta">
+            <span class="transaction-type">${label}</span>
+            <span class="transaction-date">${dateFmt}</span>
           </div>
-          <div class="transaction-details">
-            <div class="transaction-meta">
-              <span class="transaction-type">${label}</span>
-              <span class="transaction-date">${dateFmt}</span>
-            </div>
-            <div class="transaction-info">
-              <span class="transaction-amount">${amountFmt} ${tx.currency || 'SUN'}</span>
-              <span class="transaction-status ${statusClass}">${statusText}</span>
-            </div>
+          <div class="transaction-info">
+            <span class="transaction-amount">${amountFmt} ${tx.currency || 'SUN'}</span>
+            <span class="transaction-status ${statusClass}">${statusText}</span>
           </div>
-        </div>`;
-      transactionList.insertAdjacentHTML('beforeend', itemHTML);
-    });
-  }
+        </div>
+      </div>`;
+    transactionList.insertAdjacentHTML('beforeend', itemHTML);
+  });
+}
 
   // Busca as últimas 3 transações do endereço
   async function loadLastTransactions() {

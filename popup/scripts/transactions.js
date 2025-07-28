@@ -66,43 +66,71 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Funções relacionadas a transações
   async function loadTransactions(filter = 'all') {
-    try {
-      console.log(`[DEBUG] Loading transactions for ${walletAddress}, filter=${filter}`);
+  try {
+    console.log(`[DEBUG] Loading transactions for ${walletAddress}, filter=${filter}`);
+    
+    let query = supabase
+      .from('transactions')
+      .select('*')
+      .eq('wallet_address', walletAddress)
+      .order('created_at', { ascending: false });
       
-      let query = supabase
-        .from('transactions')
-        .select('*')
-        .eq('wallet_address', walletAddress)
-        .order('created_at', { ascending: false });
-        
-      if (filter !== 'all') {
-  query = query.eq('type', filter.toUpperCase());
-}
+    if (filter !== 'all') {
+      // Mapeia filtros para tipos do banco de dados
+      const filterMap = {
+        'sent': 'SENT',
+        'received': ['RECEIVED', 'checkin', 'referral', 'mission'],
+        'checkin': 'checkin',
+        'referral': 'referral',
+        'mission': 'mission'
+      };
       
-      const { data: transactions, error } = await query;
-      if (error) throw error;
-      
-      if (!transactions || transactions.length === 0) {
-        showNoTransactionsMessage(filter);
-        return;
+      if (filterMap[filter]) {
+        if (Array.isArray(filterMap[filter])) {
+          // Filtro múltiplo (OR)
+          query = query.or(filterMap[filter].map(type => `type.eq.${type}`).join(','));
+        } else {
+          // Filtro único
+          query = query.eq('type', filterMap[filter]);
+        }
       }
-      
-      renderTransactions(transactions);
-    } catch (err) {
-      console.error('[ERROR] loadTransactions:', err);
-      showErrorMessage(err);
     }
+    
+    const { data: transactions, error } = await query;
+    if (error) throw error;
+    
+    if (!transactions || transactions.length === 0) {
+      showNoTransactionsMessage(filter);
+      return;
+    }
+    
+    renderTransactions(transactions);
+  } catch (err) {
+    console.error('[ERROR] loadTransactions:', err);
+    showErrorMessage(err);
   }
+}
 
-  function showNoTransactionsMessage(filter) {
-    const filterLabel = filter === 'all' ? '' : filter === 'received' ? 'received ' : 'sent ';
-    fullTransactionList.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-exchange-alt"></i>
-        <p>No ${filterLabel}transactions found</p>
-        <small>Wallet: ${shortenAddress(walletAddress)}</small>
-      </div>`;
-  }
+
+  // Mensagem para nenhuma transação (ATUALIZADA)
+function showNoTransactionsMessage(filter) {
+  const filterLabels = {
+    all: '',
+    sent: 'sent ',
+    received: 'received ',
+    checkin: 'check-in ',
+    referral: 'referral ',
+    mission: 'mission '
+  };
+  
+  const label = filterLabels[filter] || '';
+  fullTransactionList.innerHTML = `
+    <div class="empty-state">
+      <i class="fas fa-exchange-alt"></i>
+      <p>No ${label}transactions found</p>
+      <small>Wallet: ${shortenAddress(walletAddress)}</small>
+    </div>`;
+}
   
   function showErrorMessage(err) {
     fullTransactionList.innerHTML = `
@@ -114,35 +142,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   
   function renderTransactions(transactions) {
-    fullTransactionList.innerHTML = '';
+  fullTransactionList.innerHTML = '';
+  
+  transactions.forEach(tx => {
+    // Normaliza o tipo e verifica se é envio
+    const isSent = tx.type.toLowerCase() === 'sent';
     
-    transactions.forEach(tx => {
-      const isReceived = tx.type === 'received';
-      const dateFmt = tx.created_at ? formatDateTime(tx.created_at) : '—';
-      const amountFmt = (isReceived ? '+' : '-') + parseFloat(tx.amount).toFixed(4);
-      const iconDir = isReceived ? 'down' : 'up';
-      const label = isReceived ? 'Received' : 'Sent';
-      const statusText = tx.status === 'pending' ? 'Pending' : 'Confirmed';
-      const statusClass = tx.status === 'pending' ? 'pending' : 'confirmed';
-      
-      fullTransactionList.insertAdjacentHTML('beforeend', `
-        <div class="full-transaction-item ${tx.type}">
-          <div class="transaction-icon">
-            <i class="fas fa-arrow-${iconDir}"></i>
+    // Formatações
+    const dateFmt = tx.created_at ? formatDateTime(tx.created_at) : '—';
+    const amountFmt = (isSent ? '-' : '+') + parseFloat(tx.amount).toFixed(4);
+    const iconDir = isSent ? 'up' : 'down';
+    const label = isSent ? 'Sent' : 'Received';
+    const statusText = tx.status === 'pending' ? 'Pending' : 'Confirmed';
+    const statusClass = tx.status === 'pending' ? 'pending' : 'confirmed';
+    
+    fullTransactionList.insertAdjacentHTML('beforeend', `
+      <div class="full-transaction-item ${tx.type}">
+        <div class="transaction-icon">
+          <i class="fas fa-arrow-${iconDir}"></i>
+        </div>
+        <div class="transaction-details">
+          <div class="transaction-meta">
+            <span class="transaction-type">${label}</span>
+            <span class="transaction-date">${dateFmt}</span>
           </div>
-          <div class="transaction-details">
-            <div class="transaction-meta">
-              <span class="transaction-type">${label}</span>
-              <span class="transaction-date">${dateFmt}</span>
-            </div>
-            <div class="transaction-info">
-              <span class="transaction-amount">${amountFmt} ${tx.currency || 'SUN'}</span>
-              <span class="transaction-status ${statusClass}">${statusText}</span>
-            </div>
+          <div class="transaction-info">
+            <span class="transaction-amount">${amountFmt} ${tx.currency || 'SUN'}</span>
+            <span class="transaction-status ${statusClass}">${statusText}</span>
           </div>
-        </div>`);
-    });
-  }
+        </div>
+      </div>`);
+  });
+}
 
   // Event Listeners
   copyAddressBtn.addEventListener('click', () => {
